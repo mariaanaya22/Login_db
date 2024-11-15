@@ -8,13 +8,30 @@ const jwt = require('jsonwebtoken');
 const registrarUsuario = async (req, res) => {
     const { nombre, apellido, contraseña } = req.body;
 
-    const hashedPassword = await bcrypt.hash(contraseña, 10);
-    const Nuevousuario = { nombre, apellido, contraseña: hashedPassword };
-
+   
     try {
+        const usuarioExistente = await usuario.findOne({ nombre, apellido });
+        if (usuarioExistente) {
+            return res.status(400).json({ mensaje: 'El usuario ya está registrado' });
+        }
+        const hashedPassword = await bcrypt.hash(contraseña, 10);
+        const Nuevousuario = { nombre, apellido, contraseña: hashedPassword };
+
+      // Guardar el usuario en la base de datos
         const usuarioGuardado = await usuario.create(Nuevousuario);
-        usuarioGuardado.save();
-        res.status(200).json({ mensaje: "Usuario registrado exitosamente", usuario: usuarioGuardado });
+        await usuarioGuardado.save();
+// Crear el token JWT automáticamente después de registrarse
+     const token = jwt.sign({ nombre: usuarioGuardado.nombre, id: usuarioGuardado._id }, process.env.JWT_SECRET, {
+    expiresIn: '1h', // El token expirará en 1 hora
+
+  
+});
+
+res.status(200).json({
+    mensaje: "Usuario registrado y autenticado exitosamente",
+    token: token,  
+});
+
     } catch (err) {
         res.status(500).json({ mensaje: "Error al registrar el usuario", error: err.message });
     }
