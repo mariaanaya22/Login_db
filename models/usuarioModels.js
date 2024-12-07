@@ -6,7 +6,7 @@ const usuarioschema = new mongoose.Schema({
         required: true,
     },
 
-    apellido :{
+    correo :{
         type: String,
         required: true,
 
